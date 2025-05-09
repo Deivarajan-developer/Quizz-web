@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Online Quiz</title>
+   <style>
+    * {
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 100vh;
+        padding-top: 50px;
+        color: #fff;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+
+    label {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        display: block;
+        
+    }
+
+    #username {
+        padding: 10px 15px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 10px;
+        width: 300px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        font-weight:bold;
+    }
+
+    #quiz-container {
+        background: #ffffff;
+        color: #333;
+        border-radius: 15px;
+        padding: 30px;
+        width: 90%;
+        max-width: 600px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+        transition: all 0.5s ease-in-out;
+    }
+
+    input[type="radio"] {
+        margin-right: 10px;
+    }
+    #btn{
+     margin-left:30px;
+    width : 40%;
+    }
+
+    button {
+        background-color: #3a7bd5;
+        color: white;
+        padding: 12px 25px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 8px;
+        margin: 10px 10px 0 0;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #2e5ca8;
+    }
+
+    #score {
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin-top: 20px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s forwards;
+    }
+
+    .fade-out {
+        animation: fadeOut 0.5s forwards;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateX(50px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(-50px); }
+    }
+</style>
+</head>
+<body>
+    <h1>Online Quiz</h1>
+
+    <!-- 1.a: Username Input -->
+    <label id=Name>Enter your name: 
+        <input type="text" id="username" required>
+    </label>
+    <br><br>
+
+    <!-- Quiz will be injected here -->
+    <div id="quiz-container"></div>
+
+    <!-- Submit button appears only at end -->
+    <button id="submit-btn" style="display: none;">Submit Answers</button>
+    <p id="score"></p>
+
+    <script>
+        let quizzes = [];
+        let answers = [];
+        let currentQuestion = 0;
+
+        // 3.a: Show one question at a time
+        function showQuestion(index) {
+            const container = document.getElementById("quiz-container");
+            container.innerHTML = "";
+            const q = quizzes[index];
+
+            const div = document.createElement("div");
+            div.innerHTML = `
+                <h3>${q.question}</h3>
+                <label><input type="radio" name="q${index}" value="${q.option1}" required> ${q.option1}</label><br>
+                <label><input type="radio" name="q${index}" value="${q.option2}" required> ${q.option2}</label><br>
+                <label><input type="radio" name="q${index}" value="${q.option3}" required> ${q.option3}</label><br>
+                <label><input type="radio" name="q${index}" value="${q.option4}" required> ${q.option4}</label><br>
+                <div id="feedback-${index}"></div><br>
+                ${index > 0 ? `<button id=btn onclick="prevQuestion()">Back</button>` : ""}
+                
+                <button id=btn onclick="nextQuestion()">Next</button>
+            `;
+            container.appendChild(div);
+            
+         // Restore previously selected answer
+            if (answers[index]) {
+                const inputs = container.querySelectorAll(`input[name="q${index}"]`);
+                inputs.forEach(input => {
+                    if (input.value === answers[index]) {
+                        input.checked = true;
+                    }
+                });
+            }
+        }
+        
+
+        function nextQuestion() {
+            const container = document.getElementById("quiz-container");
+
+            // Animate fade-out
+            container.classList.add("fade-out");
+
+            setTimeout(() => {
+                // Save the selected answer
+                const selected = document.querySelector(`input[name="q${currentQuestion}"]:checked`);
+                answers[currentQuestion] = selected ? selected.value : null;
+
+                // Move to next question
+                currentQuestion++;
+
+                if (currentQuestion < quizzes.length) {
+                    showQuestion(currentQuestion);
+                } else {
+                    container.innerHTML = "<p>All questions answered. Click Submit to view your score.</p>";
+                    document.getElementById("submit-btn").style.display = "block";
+                }
+
+                // Animate fade-in
+                container.classList.remove("fade-out");
+                container.classList.add("fade-in");
+
+                // Remove fade-in class after animation completes
+                setTimeout(() => container.classList.remove("fade-in"), 500);
+
+            }, 500); // Matches fade-out animation time
+        }
+
+        function prevQuestion() {
+            const container = document.getElementById("quiz-container");
+
+            // Animate fade-out
+            container.classList.add("fade-out");
+
+            setTimeout(() => {
+                // Save current answer before going back
+                const selected = document.querySelector(`input[name="q${currentQuestion}"]:checked`);
+                answers[currentQuestion] = selected ? selected.value : null;
+
+                currentQuestion--;
+
+                if (currentQuestion >= 0) {
+                    showQuestion(currentQuestion);
+                }
+
+                // Animate fade-in
+                container.classList.remove("fade-out");
+                container.classList.add("fade-in");
+
+                // Remove fade-in class after animation
+                setTimeout(() => container.classList.remove("fade-in"), 500);
+            }, 500);
+        }
+        
+        
+        
+        
+        // 2.d: Submit with username and score
+        function checkAnswers() {
+            const username = document.getElementById("username").value.trim();
+            if (!username) {
+                alert("Please enter your name.");
+                return;
+            }
+            
+         // Check if all questions are answered
+            for (let i = 0; i < quizzes.length; i++) {
+                if (!answers[i]) {
+                    alert(`Please answer Question ${i + 1} before submitting.`);
+                    currentQuestion = i;
+                    showQuestion(currentQuestion);
+                    return;
+                }
+            }
+
+            let score = 0;
+            quizzes.forEach((q, i) => {
+            	console.log("Selected:",answers[i],"Correct:",q.correctAnswer);
+                if (answers[i] && answers[i].trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) {
+                    score++;
+                }
+            });
+
+            document.getElementById("score").innerText = `You scored ${score} out of ${quizzes.length}`;
+            submitAnswers(username,score);
+        }
+            function submitAnswers(username, score) {
+               // const username = document.getElementById("username").value;
+                //const score = calculateScore();  // Calculate the score from selected answers
+
+                // Prepare the data to send
+                //const resultData = {
+                  //  username: username,
+                    //score: score
+                    
+                    const resultData = { username, score};
+                //};
+
+                // Send data to backend
+                fetch("http://localhost:8080/api/results", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(resultData)  // Convert to JSON format
+                })
+                .then(response => response.json())
+                .then(data => 
+                    console.log("Result saved:", data))
+                
+                .catch(error => console.error("Error:", error));
+            }
+        //}
+    
+        // Load quiz data
+        fetch("http://localhost:8080/api/quizzes")
+            .then(res => res.json())
+            .then(data => {
+                quizzes = data;
+                answers = Array(quizzes.length).fill(null);
+                showQuestion(currentQuestion);
+            });
+
+        // Hook up submit button
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("submit-btn").addEventListener("click", checkAnswers);
+        });
+    </script>
+</body>
+</html>
